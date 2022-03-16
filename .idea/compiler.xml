@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="1.8">
+      <module name="FtcRobotController-7.0.build_8087" target="11" />
+      <module name="FtcRobotController-7.0.FtcRobotController" target="11" />
+      <module name="FtcRobotController-7.0.TeamCode" target="11" />
+      <module name="FtcRobotController-7.0.TeamCode_8087" target="11" />
+      <module name="FtcRobotController-7.0.TeamCode_9384" target="11" />
+      <module name="FtcRobotController-7.0.TeamCode_9385" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

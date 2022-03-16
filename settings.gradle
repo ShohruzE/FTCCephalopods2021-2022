@@ -1,0 +1,6 @@
+include ':FtcRobotController'
+include ':TeamCode'
+include ':MeepMeepTesting'
+include ':TeamCode_9384'
+include ':TeamCode_8087'
+include ':TeamCode_9385'
