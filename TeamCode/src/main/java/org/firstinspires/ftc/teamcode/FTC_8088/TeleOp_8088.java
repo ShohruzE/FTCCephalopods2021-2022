@@ -177,7 +177,7 @@ public class TeleOp_8088 extends OpMode {
         double spin = 0; // rotational movement
 
         double denominator = Math.max(Math.abs(vertical) + Math.abs(horizontal) + Math.abs(spin), 1);
-        horizontal = gamepad1.left_stick_x * 1.1;
+        horizontal = gamepad1.left_stick_x;
         vertical = - gamepad1.left_stick_y;
         spin = gamepad1.right_stick_x;
 
