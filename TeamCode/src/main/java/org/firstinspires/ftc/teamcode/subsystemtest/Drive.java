@@ -1,11 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsystemtest;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class SubsystemTest implements Subsystem {
+public class Drive extends Subsystem {
 
     DcMotor frontLeft;
     DcMotor frontRight;
@@ -17,8 +18,12 @@ public class SubsystemTest implements Subsystem {
     double backLeftMotorPower;
     double backRightMotorPower;
 
+    public Drive(OpMode opMode) {
+        super(opMode);
+    }
+
     @Override
-    public void init(HardwareMap hardwareMap) {
+    public void init() {
 
         frontLeft   = hardwareMap.get(DcMotor.class, "FL");
         frontRight  = hardwareMap.get(DcMotor.class, "FR");
@@ -39,16 +44,16 @@ public class SubsystemTest implements Subsystem {
     }
 
     @Override
-    public void run(Gamepad gamepad) {
+    public void run() {
 
         double horizontal = 0; // x-axis movement
         double vertical = 0; // y-axis movement
         double spin = 0; // rotational movement
 
         double denominator = Math.max(Math.abs(vertical) + Math.abs(horizontal) + Math.abs(spin), 1);
-        horizontal = gamepad.left_stick_x;
-        vertical = -gamepad.left_stick_y;
-        spin = gamepad.right_stick_x;
+        horizontal = gamepad1.left_stick_x;
+        vertical = -gamepad1.left_stick_y;
+        spin = gamepad1.right_stick_x;
 
         frontLeftMotorPower = (vertical + horizontal + spin) / denominator;
         frontRightMotorPower = (vertical - horizontal - spin) / denominator;
