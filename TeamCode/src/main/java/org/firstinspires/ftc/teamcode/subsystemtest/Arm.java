@@ -15,6 +15,7 @@ public class Arm extends Subsystem {
     }
     @Override
     public void init() {
+        hardwareMap = opMode.hardwareMap;
         armMotor = hardwareMap.get(DcMotor.class, "arm");
         maxArmHeightLimit = hardwareMap.get(RevTouchSensor.class, "MAHL");
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
