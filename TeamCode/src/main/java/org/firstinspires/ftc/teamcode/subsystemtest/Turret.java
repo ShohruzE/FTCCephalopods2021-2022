@@ -3,8 +3,6 @@ package org.firstinspires.ftc.teamcode.subsystemtest;
 import com.qualcomm.hardware.rev.RevTouchSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Turret extends Subsystem {
 
@@ -20,6 +18,9 @@ public class Turret extends Subsystem {
 
     @Override
     public void init() {
+
+       hardwareMap = opMode.hardwareMap;
+
         turret = hardwareMap.get(DcMotor.class, "TR");
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -30,8 +31,10 @@ public class Turret extends Subsystem {
 
     @Override
     public void run() {
+
         boolean leftSwitchIsPressed = leftTurretLimit.isPressed();
         boolean rightSwitchIsPressed = rightTurretLimit.isPressed();
+
         if (gamepad2.x) {
             turret.setPower(-turretSpeed);
 

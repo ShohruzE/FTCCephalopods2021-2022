@@ -5,10 +5,15 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public abstract class Subsystem {
+
+    OpMode opMode;
     HardwareMap hardwareMap;
     Gamepad gamepad1;
     Gamepad gamepad2;
+
     public Subsystem(OpMode opMode) {
+
+        this.opMode = opMode;
         hardwareMap = opMode.hardwareMap;
         gamepad1 = opMode.gamepad1;
         gamepad2 = opMode.gamepad2;
