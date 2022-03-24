@@ -32,6 +32,7 @@ public class Drive extends Subsystem {
     public void init() {
 
         hardwareMap = opMode.hardwareMap;
+        gamepad1 = opMode.gamepad1;
 
         frontLeft   = hardwareMap.get(DcMotor.class, "FL");
         frontRight  = hardwareMap.get(DcMotor.class, "FR");
@@ -45,8 +46,8 @@ public class Drive extends Subsystem {
         */
 
         frontLeft.setDirection(DcMotor.Direction.FORWARD);
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.FORWARD);
+        frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

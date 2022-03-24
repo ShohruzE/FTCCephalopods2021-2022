@@ -25,6 +25,8 @@ public class Intake extends Subsystem {
     public void init() {
 
         hardwareMap = opMode.hardwareMap;
+        gamepad1 = opMode.gamepad1;
+        gamepad2 = opMode.gamepad2;
 
         intake = hardwareMap.get(CRServo.class, "Intake");
         colorSensor = hardwareMap.get(RevColorSensorV3.class, "CS");

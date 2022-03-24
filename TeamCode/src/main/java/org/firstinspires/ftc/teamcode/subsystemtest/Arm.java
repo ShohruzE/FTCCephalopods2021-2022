@@ -20,6 +20,8 @@ public class Arm extends Subsystem {
     public void init() {
 
         hardwareMap = opMode.hardwareMap;
+        gamepad1 = opMode.gamepad1;
+        gamepad2 = opMode.gamepad2;
 
         armMotor = hardwareMap.get(DcMotor.class, "arm");
         maxArmHeightLimit = hardwareMap.get(RevTouchSensor.class, "MAHL");

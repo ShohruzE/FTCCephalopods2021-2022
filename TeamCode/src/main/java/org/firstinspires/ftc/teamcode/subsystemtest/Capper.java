@@ -15,6 +15,8 @@ public class Capper extends Subsystem {
     public void init() {
 
         hardwareMap = opMode.hardwareMap;
+        gamepad1 = opMode.gamepad1;
+
         capper = hardwareMap.get(CRServo.class, "CAP");
     }
 

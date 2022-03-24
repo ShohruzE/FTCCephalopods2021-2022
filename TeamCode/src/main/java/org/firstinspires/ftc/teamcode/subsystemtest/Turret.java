@@ -20,6 +20,8 @@ public class Turret extends Subsystem {
     public void init() {
 
        hardwareMap = opMode.hardwareMap;
+       gamepad1 = opMode.gamepad1;
+       gamepad2 = opMode.gamepad2;
 
         turret = hardwareMap.get(DcMotor.class, "TR");
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
