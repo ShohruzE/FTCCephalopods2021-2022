@@ -11,6 +11,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 public class Intake extends Subsystem {
 
     CRServo intake;
+    CRServo guideWheelLeft;
+    CRServo guideWheelRight;
     RevColorSensorV3 colorSensor;
 
     public static double intakeSpeed = 1;
@@ -29,6 +31,8 @@ public class Intake extends Subsystem {
         gamepad2 = opMode.gamepad2;
 
         intake = hardwareMap.get(CRServo.class, "Intake");
+        guideWheelLeft = hardwareMap.get(CRServo.class, "GWL");
+        guideWheelRight = hardwareMap.get(CRServo.class, "GWR");
         colorSensor = hardwareMap.get(RevColorSensorV3.class, "CS");
         intake.setPower(0);
     }
@@ -38,12 +42,23 @@ public class Intake extends Subsystem {
 
         boolean hasCargo = colorSensor.getDistance(DistanceUnit.CM) <= 3.5;
 
-        if (gamepad1.right_trigger > .2 || gamepad2.right_trigger > .2 && !hasCargo) {
+        // TODO: Add slower intake and outtake speeds after testing if necessary
+        if (gamepad1.left_trigger > .2 || gamepad2.left_trigger > .2 && !hasCargo) {
+
             intake.setPower(intakeSpeed); /* Math.Max(gamepad1.rightTrigger, gamepad2.rightTrigger) */
-        } else if (gamepad1.left_trigger > .2 || gamepad2.left_trigger > .2) {
+            guideWheelLeft.setPower(intakeSpeed);
+            guideWheelRight.setPower(-intakeSpeed);
+        }
+        else if (gamepad1.right_trigger > .2 || gamepad2.right_trigger > .2) {
+
             intake.setPower(-intakeSpeed); /* -Math.Max(gamepad1.leftTrigger, gamepad2.leftTrigger) */
-        } else {
+            guideWheelLeft.setPower(-intakeSpeed);
+            guideWheelRight.setPower(intakeSpeed);
+        }
+        else {
             intake.setPower(0);
+            guideWheelLeft.setPower(0);
+            guideWheelRight.setPower(0);
         }
     }
 }
