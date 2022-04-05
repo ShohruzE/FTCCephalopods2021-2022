@@ -2,9 +2,12 @@ package org.firstinspires.ftc.teamcode.subsystemtest;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp
 public class SusbystemTeleOp extends OpMode {
+
+    private ElapsedTime gameTime = new ElapsedTime(ElapsedTime.Resolution.SECONDS);
 
     /*
     Arm arm = new Arm(this);
@@ -27,6 +30,12 @@ public class SusbystemTeleOp extends OpMode {
         drive.init();
 
 
+    }
+
+    @Override
+    public void start() {
+
+        gameTime.reset();
     }
 
     @Override
