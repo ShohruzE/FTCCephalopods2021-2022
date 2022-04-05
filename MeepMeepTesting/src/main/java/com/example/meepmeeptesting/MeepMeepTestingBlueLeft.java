@@ -15,11 +15,70 @@ public class MeepMeepTestingBlueLeft {
                 .setBackground(MeepMeep.Background.FIELD_FREIGHT_FRENZY)
                 .setTheme(new ColorSchemeRedDark())
                 .setBackgroundAlpha(1f)
-                .setConstraints(50, 40, Math.toRadians(180), Math.toRadians(180), 13.5)
-                .setBotDimensions(13,14)
+                .setConstraints(50, 40, Math.toRadians(180), Math.toRadians(180), 12)
+                .setBotDimensions(13,17.5)
                 .followTrajectorySequence(drive ->
 
-                                drive.trajectorySequenceBuilder(new Pose2d(12,64, Math.toRadians(180)))
+                        drive.trajectorySequenceBuilder(new Pose2d(12,64, Math.toRadians(0)))
+
+                                // Pre-load
+                                .setReversed(true)
+                                .splineTo(new Vector2d(0,38), Math.toRadians(315))
+
+                                // 1st cylce
+                                .setReversed(false)
+                                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                                .setReversed(true)
+                                .lineTo(new Vector2d(12, 64))
+                                .splineTo(new Vector2d(0,38), Math.toRadians(315))
+
+                                // 2nd cycle
+                                .setReversed(false)
+                                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                                .setReversed(true)
+                                .lineTo(new Vector2d(12, 64))
+                                .splineTo(new Vector2d(0,38), Math.toRadians(315))
+
+                                // 3rd cycle
+                                .setReversed(false)
+                                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                                .splineTo(new Vector2d(38,64), Math.toRadians(0))
+                                .splineTo(new Vector2d(46, 58), Math.toRadians(310))    // Two splines
+
+
+                                .setReversed(true)
+                                .splineTo(new Vector2d(38, 64), Math.toRadians(180))
+                                .lineTo(new Vector2d(12, 64))
+                                .splineTo(new Vector2d(0,38), Math.toRadians(315))
+
+                                // 4th cycle
+                                .setReversed(false)
+                                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                                .setReversed(true)
+                                .lineTo(new Vector2d(12, 64))
+                                .splineTo(new Vector2d(0,38), Math.toRadians(315))
+
+                                // Park
+                                .setReversed(false)
+                                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+
+
+
+
+
+
+
+
+
+                                        /*
 
                                         .lineToLinearHeading(new Pose2d(2,32, Math.toRadians(-45)))
                                         .waitSeconds(1.5)
@@ -47,7 +106,7 @@ public class MeepMeepTestingBlueLeft {
                                         .strafeRight(25)
                                         .splineToLinearHeading(new Pose2d(68, 35, Math.toRadians(90)), Math.toRadians(0))
 
-
+                                        */
 
                                         .build()
                 )

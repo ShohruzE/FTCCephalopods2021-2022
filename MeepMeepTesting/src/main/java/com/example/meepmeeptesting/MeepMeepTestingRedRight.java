@@ -5,7 +5,7 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedDark;
 
-public class MeepMeepTestingRedRight { // TODO: 8087 8087 8087 8087 8087 8087 8087
+public class MeepMeepTestingRedRight {
 
     public static void main(String args[]) {
 
@@ -15,11 +15,81 @@ public class MeepMeepTestingRedRight { // TODO: 8087 8087 8087 8087 8087 8087 80
                 .setBackground(MeepMeep.Background.FIELD_FREIGHT_FRENZY)
                 .setTheme(new ColorSchemeRedDark())
                 .setBackgroundAlpha(1f)
-                .setConstraints(50, 40, Math.toRadians(180), Math.toRadians(180), 13.5)
-                .setBotDimensions(13,14)
+                .setConstraints(60, 50, Math.toRadians(180), Math.toRadians(180), 12)
+                .setBotDimensions(13,17.5)
                 .followTrajectorySequence(drive ->
 
                                 drive.trajectorySequenceBuilder(new Pose2d(12,-64, Math.toRadians(0)))
+
+                                        // Pre-load
+                                        .setReversed(true)
+                                        .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+
+                                        // 1st cylce
+                                        .setReversed(false)
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .setReversed(true)
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+
+                                        // 2nd cycle
+                                        .setReversed(false)
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .setReversed(true)
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+
+                                        // 3rd cycle
+                                        .setReversed(false)
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(38,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(46, -58), Math.toRadians(50))    // Two splines
+
+
+                                        .setReversed(true)
+                                        .splineTo(new Vector2d(38, -64), Math.toRadians(180))
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+
+                                        // 4th cycle
+                                        .setReversed(false)
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .setReversed(true)
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+
+                                        // Park
+                                        .setReversed(false)
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+
+                        //                .splineTo(new Vector2d(12,-63), Math.toRadians(0))
+                        //                .splineTo(new Vector2d(20, -64), Math.toRadians(0))
+                        //                .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        /*
+                                        .splineToSplineHeading(new Pose2d(0, -38, Math.toRadians(45)), Math.toRadians(45))
+
+                                        .splineToSplineHeading(new Pose2d(10, -55, Math.toRadians(0)), Math.toRadians(270))
+                                        .splineToConstantHeading(new Vector2d(44, -65), Math.toRadians(355))
+
+
+                                        .splineToConstantHeading(new Vector2d(6, -64), Math.toRadians(355))
+                                        // fix weird hook in spline below to mimic first spline
+                                        .splineToSplineHeading(new Pose2d(0, -38, Math.toRadians(45)), Math.toRadians(45))
+                                        */
+
+
+
+
+                                        /*
 
                                         .lineToLinearHeading(new Pose2d(2, -32, Math.toRadians(45)))
                                         .waitSeconds(1)
@@ -44,17 +114,8 @@ public class MeepMeepTestingRedRight { // TODO: 8087 8087 8087 8087 8087 8087 80
                                         .splineToLinearHeading(new Pose2d(63, -38, Math.toRadians(270)), Math.toRadians(0))
 
 
-/*                                .splineTo(new Vector2d(2, -37), Math.toRadians(135))
-                                .waitSeconds(2)
-                                // Move back slightly to allow space for turning to face warehouse
-                                .back(8)
-                                .turn(Math.toRadians(-45))
-                                .turn(Math.toRadians(-90))
-                                // Move to the barrier
-                                .strafeRight(20)
-                                // Move forward to take freight
-                                .forward(28)
-*/
+                                         */
+
 
                                 .build()
                 )
