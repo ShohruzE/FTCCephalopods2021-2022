@@ -29,6 +29,7 @@ public class DrivetrainTest_8088 extends OpMode {
     @Override
     public void init() {
 
+
         // Name all Motors
         frontLeftMotor  = hardwareMap.get(DcMotor.class, "FL");
         frontRightMotor = hardwareMap.get(DcMotor.class, "FR");
@@ -37,9 +38,9 @@ public class DrivetrainTest_8088 extends OpMode {
 
         // Set motor direction
         frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
 
         // Set ZERO POWER BEHAVIOR
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
