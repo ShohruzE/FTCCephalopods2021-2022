@@ -4,6 +4,7 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedDark;
+import com.noahbres.meepmeep.roadrunner.SampleMecanumDrive;
 
 public class MeepMeepTestingRedRight {
 
@@ -21,6 +22,103 @@ public class MeepMeepTestingRedRight {
 
                                 drive.trajectorySequenceBuilder(new Pose2d(12,-64, Math.toRadians(0)))
 
+                                        .lineToLinearHeading(new Pose2d(-8, -46, Math.toRadians(90)))
+                                        .waitSeconds(1)
+                                        .lineToLinearHeading(new Pose2d(12, -65, Math.toRadians(0)))
+
+
+                                        .splineTo(new Vector2d(24,-65), Math.toRadians(0))
+
+                                        .splineTo(new Vector2d(42, -65), Math.toRadians(0))
+                                        .splineTo(new Vector2d(48,-65), Math.toRadians(0))
+                                        .waitSeconds(0.5)
+
+                                        .lineTo(new Vector2d(12, -65))
+                                        .splineToConstantHeading(new Vector2d(-8, -46), Math.toRadians(110))
+                                        .waitSeconds(1)
+
+
+
+                                        .splineToConstantHeading(new Vector2d(14, -70), Math.toRadians(0))
+
+                                        .splineTo(new Vector2d(24,-70), Math.toRadians(0))
+                                        .splineTo(new Vector2d(28,-70), Math.toRadians(0))
+                                        .splineTo(new Vector2d(50, -70), Math.toRadians(0))
+
+                                        /*
+
+                                        .lineToLinearHeading(new Pose2d(-8, -48, Math.toRadians(90)))
+
+                                        // Pre-load
+                                        .setReversed(true)
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+                                        .waitSeconds(0.5)
+
+                                        // 1st cycle
+                                        .setReversed(false)
+                                        .splineToConstantHeading(new Vector2d(16, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                                        // 2nd cycle
+                                        .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                                        // 3rd cycle
+                                        .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                                        // 4th cycle
+                                        .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(28,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(46, -58), Math.toRadians(50))
+
+                                        .setReversed(true)
+                                        .splineTo(new Vector2d(32, -64), Math.toRadians(180))
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                                        // 5th cycle
+                                        .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(28,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(46, -58), Math.toRadians(50))
+
+                                        .setReversed(true)
+                                        .splineTo(new Vector2d(32, -64), Math.toRadians(180))
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                                        // 6th cycle
+                                        .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                                        .lineTo(new Vector2d(12, -64))
+                                        .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                                        // Park
+                                        .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                                        .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+
+                                         */
+
+
+                                        /*
                                         // Pre-load
                                         .setReversed(true)
                                         .splineTo(new Vector2d(0,-38), Math.toRadians(45))
@@ -69,6 +167,7 @@ public class MeepMeepTestingRedRight {
                                         .splineTo(new Vector2d(24,-64), Math.toRadians(0))
                                         .splineTo(new Vector2d(44,-64), Math.toRadians(0))
 
+                                         */
 
                         //                .splineTo(new Vector2d(12,-63), Math.toRadians(0))
                         //                .splineTo(new Vector2d(20, -64), Math.toRadians(0))

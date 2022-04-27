@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.subsystemtest;
 
 
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -14,11 +16,7 @@ public class Drive extends Subsystem {
     DcMotor backLeft;
     DcMotor backRight;
 
-    /*
-    Servo odometerVerticalLeft;
-    Servo odometerVerticalRight;
-    Servo odometerLateral;
-    */
+    ColorSensor colorSensor2;
 
     double frontLeftMotorPower;
     double frontRightMotorPower;
@@ -40,11 +38,7 @@ public class Drive extends Subsystem {
         backLeft    = hardwareMap.get(DcMotor.class, "BL");
         backRight   = hardwareMap.get(DcMotor.class, "BR");
 
-        /*
-        odometerVerticalLeft = hardwareMap.get(Servo.class, "OVL");
-        odometerVerticalRight = hardwareMap.get(Servo.class, "OVR");
-        odometerLateral = hardwareMap.get(Servo.class, "OL");
-        */
+        colorSensor2 = hardwareMap.get(ColorSensor.class, "CS2");
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         frontRight.setDirection(DcMotor.Direction.REVERSE);
@@ -55,7 +49,6 @@ public class Drive extends Subsystem {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
 
 
     }
@@ -89,5 +82,7 @@ public class Drive extends Subsystem {
         frontRight.setPower(frontRightMotorPower * powerMultiplier);
         backLeft.setPower(backLeftMotorPower * powerMultiplier);
         backRight.setPower(backRightMotorPower * powerMultiplier);
+
+
     }
 }

@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -40,13 +41,21 @@ public class Autonomous_8088_BlueLeft extends LinearOpMode {
     DcMotor carouselWheelRight;
 
     CRServo intake;
+    CRServo guideWheelLeft;
+    CRServo guideWheelRight;
     CRServo capper;
+    CRServo capper2;
 
     RevTouchSensor leftTurretLimit;
     RevTouchSensor rightTurretLimit;
-    RevTouchSensor maxArmHeightLimit;
+    RevTouchSensor lowArmHeightLimit;
     RevColorSensorV3 colorSensor;
     ColorSensor colorSensor2;
+
+    DigitalChannel LED_LRed;
+    DigitalChannel LED_LGreen;
+    DigitalChannel LED_RRed;
+    DigitalChannel LED_RGreen;
 
 
     // Motor Speed
@@ -65,17 +74,11 @@ public class Autonomous_8088_BlueLeft extends LinearOpMode {
 
     ElapsedTime runtime = new ElapsedTime();
 
-
     OpenCvWebcam webcam;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
-
-
-        frontLeftMotor   = hardwareMap.get(DcMotor.class, "FL");
-        frontRightMotor  = hardwareMap.get(DcMotor.class, "FR");
-        backLeftMotor    = hardwareMap.get(DcMotor.class, "BL");
-        backRightMotor   = hardwareMap.get(DcMotor.class, "BR");
 
         turret           = hardwareMap.get(DcMotor.class, "TR");
         armMotor         = hardwareMap.get(DcMotor.class, "ARM");
@@ -83,28 +86,28 @@ public class Autonomous_8088_BlueLeft extends LinearOpMode {
         carouselWheelRight = hardwareMap.get(DcMotor.class, "CWR");
 
         capper           = hardwareMap.get(CRServo.class, "CAP");
-        intake           = hardwareMap.get(CRServo.class, "Intake");
+        capper2 = hardwareMap.get(CRServo.class, "CAP2");
 
-        colorSensor      = hardwareMap.get(RevColorSensorV3.class, "CS");
-        colorSensor2     = hardwareMap.get(ColorSensor.class, "CS2");
+        intake = hardwareMap.get(CRServo.class, "Intake");
+        guideWheelLeft = hardwareMap.get(CRServo.class, "GWL");
+        guideWheelRight = hardwareMap.get(CRServo.class, "GWR");
+        colorSensor = hardwareMap.get(RevColorSensorV3.class, "CS");
+        colorSensor2 = hardwareMap.get(RevColorSensorV3.class, "CS2");
+
+        LED_LRed = hardwareMap.get(DigitalChannel.class, "LED_L-Red");
+        LED_LGreen = hardwareMap.get(DigitalChannel.class, "LED_L-Green");
+
+        LED_RRed = hardwareMap.get(DigitalChannel.class, "LED_R-Red");
+        LED_RGreen = hardwareMap.get(DigitalChannel.class, "LED_R-Green");
+
         leftTurretLimit = hardwareMap.get(RevTouchSensor.class, "LTL");
         rightTurretLimit = hardwareMap.get(RevTouchSensor.class, "RTL");
-        maxArmHeightLimit = hardwareMap.get(RevTouchSensor.class, "MAHL");
+        lowArmHeightLimit = hardwareMap.get(RevTouchSensor.class, "LAHL");
 
+        armMotor.setDirection(DcMotor.Direction.REVERSE);
+        intake.setDirection(CRServo.Direction.REVERSE);
+        guideWheelRight.setDirection(CRServo.Direction.REVERSE);
 
-
-        // Set motor direction
-        frontLeftMotor.setDirection(DcMotor.Direction.FORWARD);
-        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotor.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
-
-
-        // Set ZERO POWER BEHAVIOR
-        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -120,409 +123,477 @@ public class Autonomous_8088_BlueLeft extends LinearOpMode {
         turret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
-        // TODO: ROADRUNNER TRAJECTORIES
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startPose = new Pose2d(12,64, Math.toRadians(180));
-        Pose2d depositPose = new Pose2d(5,33, Math.toRadians(-55));
-        Pose2d alignmentPose = new Pose2d(8, 73, Math.toRadians(0));
-        Vector2d startVector = new Vector2d(12, 64);
+        // TODO: ROADRUNNER TRAJECTORIES
+
+        Pose2d startPose = new Pose2d(12, 64, Math.toRadians(0));
+
+        drive.setPoseEstimate(startPose); // Red Warehouse
 
 
-        drive.setPoseEstimate(startPose);
+        TrajectorySequence cycle1 = drive.trajectorySequenceBuilder(startPose)
 
-        TrajectorySequence cycle1SharedPark = drive.trajectorySequenceBuilder(startPose)
+                // Pre-load
+                .setVelConstraint(SampleMecanumDrive.getVelocityConstraint(60, Math.toRadians(180), DriveConstants.TRACK_WIDTH))
 
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(700))
-                .UNSTABLE_addTemporalMarkerOffset(1.2, () -> moveTurret(100))
-                .UNSTABLE_addTemporalMarkerOffset(2.2, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(3,35, Math.toRadians(-55)))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1.5)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(800))
-                .UNSTABLE_addTemporalMarkerOffset(0.3, () -> moveTurretPower(10, 0.5))
-                .lineToLinearHeading(new Pose2d(8, 74, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(350))
-                .UNSTABLE_addTemporalMarkerOffset(0.65, () -> moveArm(0))
+                /*
 
-                 // TODO: FIX CODE TO MATCH RED_RIGHT
-
-                .forward(32)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(52, 74), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
+                .setReversed(true)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(900, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> moveTurret(900, 0.25))
+                .UNSTABLE_addTemporalMarkerOffset(1.6, () -> moveArm(500, 0.2))
+                .splineToConstantHeading(new Vector2d(-8, 45), Math.toRadians(-110),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20)
                 )
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(800, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(1.2, () -> moveTurret(0, 0.3))
+                .UNSTABLE_addTemporalMarkerOffset(2.6, () -> moveArm(50, 0.3))
+
+                // 1st cycle
+                .setReversed(false)
+                .splineToConstantHeading(new Vector2d(16, 65), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20)
+                )
+
+                 */
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(700, 0.4))
+                .lineToLinearHeading(new Pose2d(-8, 46, Math.toRadians(-90)))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
+                .lineToLinearHeading(new Pose2d(12, 65, Math.toRadians(0)))
+
                 .resetConstraints()
 
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(12,74))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
+                // 1st cycle
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,65), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(42, 65), Math.toRadians(0))
+                .splineTo(new Vector2d(50,65), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(1600, 0.4))
+                .lineTo(new Vector2d(12, 65))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(900, 0.45))
+                .splineToConstantHeading(new Vector2d(-8, 46), Math.toRadians(-110))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
                 .waitSeconds(1)
                 .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(20))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 75, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(0))
 
-                .forward(35)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(56, 75), Math.toRadians(0),
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.45))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(200, 0.4))
+                .splineToConstantHeading(new Vector2d(14, 69), Math.toRadians(0))
+
+                // 2nd cycle
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,69), Math.toRadians(0))
+                .splineTo(new Vector2d(28,69), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(52, 69), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(1600, 0.4))
+                .lineTo(new Vector2d(12, 69))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(900, 0.45))
+                .splineToConstantHeading(new Vector2d(-8, 46), Math.toRadians(-110))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
+
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.45))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(200, 0.4))
+                .splineToConstantHeading(new Vector2d(14, 70), Math.toRadians(0))
+
+                // Park
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,70), Math.toRadians(0))
+                .splineTo(new Vector2d(28,70), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(52, 70), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+                /*
+                .splineTo(new Vector2d(24,69), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(52,69), Math.toRadians(0),
                         SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(500))
-                .lineTo(new Vector2d(14, 76))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
+                        SampleMecanumDrive.getAccelerationConstraint(15))
                 .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 76, Math.toRadians(0)))
 
 
-                .forward(35)
-                .strafeRight(25)
-                .splineToLinearHeading(new Pose2d(68, 25, Math.toRadians(90)), Math.toRadians(0))
+                 */
+                /*
 
-                .build();
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
 
-        TrajectorySequence cycle2SharedPark = drive.trajectorySequenceBuilder(startPose)
+                // 3rd cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.25))
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> moveArm(50, 0.3))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
 
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
 
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(900))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(new Pose2d(2,29, Math.toRadians(-55)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(alignmentPose)
-                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(0))
+                // 4th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, 58), Math.toRadians(-50))
 
-                .forward(32)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(52, 73), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
+                .setReversed(true)
+                .splineTo(new Vector2d(32, 64), Math.toRadians(-180))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
 
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(12,74))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(20))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 75, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0))
-                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(0))
+                // 5th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, 58), Math.toRadians(-50))
 
+                .setReversed(true)
+                .splineTo(new Vector2d(32, 64), Math.toRadians(-180))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
 
-                .forward(35)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(56, 75), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
+                // 6th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
 
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(500))
-                .lineTo(new Vector2d(14, 76))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(new Pose2d(5,35, Math.toRadians(-55)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 76, Math.toRadians(0)))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // Park
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
 
 
-                .forward(35)
-                .strafeRight(25)
-                .splineToLinearHeading(new Pose2d(68, 25, Math.toRadians(90)), Math.toRadians(0))
-
-                .build();
-
-        TrajectorySequence cycle3SharedPark = drive.trajectorySequenceBuilder(startPose)
-
-
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(new Pose2d(0,30, Math.toRadians(-60)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(alignmentPose)
-                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(0))
-
-                .forward(32)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(52, 73), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(12,74))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(20))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 74, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(0))
-
-                .forward(36)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(58, 74), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(14, 76))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 76, Math.toRadians(0)))
-
-
-                .forward(35)
-                .strafeRight(25)
-                .splineToLinearHeading(new Pose2d(68, 25, Math.toRadians(90)), Math.toRadians(0))
-
-                .build();
-
-
-        TrajectorySequence cycle1AlliancePark = drive.trajectorySequenceBuilder(startPose)
-
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(700))
-                .UNSTABLE_addTemporalMarkerOffset(1.2, () -> moveTurret(100))
-                .UNSTABLE_addTemporalMarkerOffset(2.2, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(3,35, Math.toRadians(-55)))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1.5)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(800))
-                .UNSTABLE_addTemporalMarkerOffset(0.3, () -> moveTurretPower(10, 0.5))
-                .lineToLinearHeading(new Pose2d(8, 74, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(350))
-                .UNSTABLE_addTemporalMarkerOffset(0.65, () -> moveArm(0))
-
-                // TODO: FIX CODE TO MATCH RED_RIGHT
-
-                .forward(32)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(52, 74), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(12,74))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(20))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 75, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(0))
-
-                .forward(35)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(56, 75), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(500))
-                .lineTo(new Vector2d(14, 76))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 76, Math.toRadians(0)))
-
-
-                .forward(35)
-
-                .build();
-
-        TrajectorySequence cycle2AlliancePark = drive.trajectorySequenceBuilder(startPose)
-
-
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(900))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(new Pose2d(2,29, Math.toRadians(-55)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(alignmentPose)
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(0))
-
-                .forward(32)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(52, 73), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(12,74))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(20))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 75, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(0))
-
-
-                .forward(35)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(56, 75), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
-
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(500))
-                .lineTo(new Vector2d(14, 76))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(new Pose2d(5,35, Math.toRadians(-55)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
-                .waitSeconds(1)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 76, Math.toRadians(0)))
-
-
-                .forward(35)
+ */
 
 
                 .build();
 
-        TrajectorySequence cycle3AlliancePark = drive.trajectorySequenceBuilder(startPose)
+        TrajectorySequence cycle2 = drive.trajectorySequenceBuilder(startPose)
 
 
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(new Pose2d(0,30, Math.toRadians(-60)))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
+                .setVelConstraint(SampleMecanumDrive.getVelocityConstraint(60, Math.toRadians(180), DriveConstants.TRACK_WIDTH))
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1100, 0.4))
+                .lineToLinearHeading(new Pose2d(-8, 46, Math.toRadians(-90)))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
                 .waitSeconds(1)
                 .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(alignmentPose)
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(0))
+                .lineToLinearHeading(new Pose2d(12, 65, Math.toRadians(0)))
 
-                .forward(32)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(52, 73), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
                 .resetConstraints()
 
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(12,74))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
+                // 1st cycle
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,65), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(42, 65), Math.toRadians(0))
+                .splineTo(new Vector2d(50,65), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(1600, 0.4))
+                .lineTo(new Vector2d(12, 65))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(900, 0.45))
+                .splineToConstantHeading(new Vector2d(-8, 46), Math.toRadians(-110))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
                 .waitSeconds(1)
                 .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(20))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 74, Math.toRadians(0)))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(0))
 
-                .forward(36)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-intakeSpeed))
-                .UNSTABLE_addTemporalMarkerOffset(2, () -> intake.setPower(0))
-                .splineTo(new Vector2d(58, 74), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(15, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
-                        SampleMecanumDrive.getAccelerationConstraint(15)
-                )
-                .resetConstraints()
 
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(500))
-                .lineTo(new Vector2d(14, 76))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1250))
-                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveTurret(100))
-                .lineToLinearHeading(depositPose)
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(intakeSpeed))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.45))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(200, 0.4))
+                .splineToConstantHeading(new Vector2d(14, 69), Math.toRadians(0))
+
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,69), Math.toRadians(0))
+                .splineTo(new Vector2d(28,69), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(50, 69), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+                // 2nd cycle
+                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(1600, 0.4))
+                .lineTo(new Vector2d(12, 69))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(900, 0.45))
+                .splineToConstantHeading(new Vector2d(-8, 46), Math.toRadians(-110))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
                 .waitSeconds(1)
                 .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
-                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(5))
-                .UNSTABLE_addTemporalMarkerOffset(1.8, () -> moveArm(350))
-                .lineToLinearHeading(new Pose2d(12, 76, Math.toRadians(0)))
 
 
-                .forward(35)
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.45))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(200, 0.4))
+                .splineToConstantHeading(new Vector2d(14, 70), Math.toRadians(0))
+
+                // Park
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,70), Math.toRadians(0))
+                .splineTo(new Vector2d(28,70), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(52, 70), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+                /*
+
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 2nd cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.25))
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> moveArm(50, 0.3))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 3rd cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.25))
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> moveArm(50, 0.3))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 4th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, 58), Math.toRadians(-50))
+
+                .setReversed(true)
+                .splineTo(new Vector2d(32, 64), Math.toRadians(-180))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 5th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, 58), Math.toRadians(-50))
+
+                .setReversed(true)
+                .splineTo(new Vector2d(32, 64), Math.toRadians(-180))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 6th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // Park
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+
+                 */
 
 
                 .build();
 
+        TrajectorySequence cycle3 = drive.trajectorySequenceBuilder(startPose)
+
+                .setVelConstraint(SampleMecanumDrive.getVelocityConstraint(60, Math.toRadians(180), DriveConstants.TRACK_WIDTH))
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(1500, 0.5))
+                .lineToLinearHeading(new Pose2d(-8, 46, Math.toRadians(-90)))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
+                .lineToLinearHeading(new Pose2d(12, 65, Math.toRadians(0)))
+
+                .resetConstraints()
+
+                // 1st cycle
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,65), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(42, 65), Math.toRadians(0))
+                .splineTo(new Vector2d(48,65), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(1600, 0.4))
+                .lineTo(new Vector2d(12, 65))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(900, 0.45))
+                .splineToConstantHeading(new Vector2d(-8, 46), Math.toRadians(-110))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
+
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.45))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(200, 0.4))
+                .splineToConstantHeading(new Vector2d(14, 69), Math.toRadians(0))
+
+
+                // 2nd cycle
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,69), Math.toRadians(0))
+                .splineTo(new Vector2d(28,69), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(50, 69), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> moveArm(1600, 0.4))
+                .lineTo(new Vector2d(12, 69))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(900, 0.45))
+                .splineToConstantHeading(new Vector2d(-8, 46), Math.toRadians(-110))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(-1))
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake.setPower(0))
+
+
+
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.45))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveArm(200, 0.4))
+                .splineToConstantHeading(new Vector2d(14, 70), Math.toRadians(0))
+
+                // Park
+                .UNSTABLE_addTemporalMarkerOffset(0.4, () -> moveArm(0, 0.3))
+                .splineTo(new Vector2d(24,70), Math.toRadians(0))
+                .splineTo(new Vector2d(28,70), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(1))
+                .splineTo(new Vector2d(52, 70), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(20, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(20))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> intake(0))
+
+                /*
+
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 2nd cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.25))
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> moveArm(50, 0.3))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 3rd cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveTurret(0, 0.25))
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> moveArm(50, 0.3))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, 64))
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> moveArm(2000, 0.4))
+                .UNSTABLE_addTemporalMarkerOffset(0.6, () -> moveTurret(900, 0.25))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 4th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, 58), Math.toRadians(-50))
+
+                .setReversed(true)
+                .splineTo(new Vector2d(32, 64), Math.toRadians(-180))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 5th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, 58), Math.toRadians(-50))
+
+                .setReversed(true)
+                .splineTo(new Vector2d(32, 64), Math.toRadians(-180))
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // 6th cycle
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, 64))
+                .splineToConstantHeading(new Vector2d(-6, 48), Math.toRadians(-110))
+
+                // Park
+                .splineToConstantHeading(new Vector2d(12, 64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,64), Math.toRadians(0))
+
+
+                 */
+
+
+                .build();
 
 
         telemetry.addData("Status", "Initialized");
@@ -564,25 +635,23 @@ public class Autonomous_8088_BlueLeft extends LinearOpMode {
 
             case LEFT:
 
-                drive.followTrajectorySequence(cycle1SharedPark);
+                drive.followTrajectorySequence(cycle1);
 
-            //    drive.followTrajectorySequence(cycle1AlliancePark);
+
 
                 break;
 
             case MIDDLE:
 
-                drive.followTrajectorySequence(cycle2SharedPark);
+                drive.followTrajectorySequence(cycle2);
 
-            //    drive.followTrajectorySequence(cycle2AlliancePark);
 
                 break;
 
             case RIGHT:
 
-                drive.followTrajectorySequence(cycle3SharedPark);
+                drive.followTrajectorySequence(cycle3);
 
-             //   drive.followTrajectorySequence(cycle3AlliancePark);
 
                 break;
         }
@@ -591,23 +660,21 @@ public class Autonomous_8088_BlueLeft extends LinearOpMode {
 
     // ROBOT AUTONOMOUS FUNCTIONS
 
-    public void moveArm(int targetPosition) {
+    public void moveArm(int targetPosition, double power) {
         armMotor.setTargetPosition(targetPosition);
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setPower(armMotorSpeed);
+        armMotor.setPower(power);
     }
 
-    public void moveTurret(int targetPosition) {
+    public void moveTurret(int targetPosition, double power) {
         turret.setTargetPosition(targetPosition);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        turret.setPower(turretSpeed);
+        turret.setPower(power);
     }
 
-    public void moveTurretPower(int targetPosition, double speed) {
-        turret.setTargetPosition(targetPosition);
-        turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        turret.setPower(speed);
+    public void intake(double power) {
+        intake.setPower(power);
+        guideWheelLeft.setPower(power);
+        guideWheelRight.setPower(power);
     }
-
-
 }

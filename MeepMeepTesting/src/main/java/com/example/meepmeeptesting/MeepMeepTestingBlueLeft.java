@@ -4,6 +4,7 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedDark;
+import com.noahbres.meepmeep.roadrunner.SampleMecanumDrive;
 
 public class MeepMeepTestingBlueLeft {
 
@@ -22,6 +23,16 @@ public class MeepMeepTestingBlueLeft {
                         drive.trajectorySequenceBuilder(new Pose2d(12,64, Math.toRadians(0)))
 
                                 // Pre-load
+
+                                .splineTo(new Vector2d(42, 65), Math.toRadians(0))
+                                .splineTo(new Vector2d(48,63), Math.toRadians(-25))
+
+                                .splineTo(new Vector2d(44, 65), Math.toRadians(0))
+                                .lineTo(new Vector2d(12, 65))
+                                .setReversed(false)
+
+
+                                /*
                                 .setReversed(true)
                                 .splineTo(new Vector2d(0,38), Math.toRadians(315))
 
@@ -70,6 +81,8 @@ public class MeepMeepTestingBlueLeft {
                                 .splineTo(new Vector2d(44,64), Math.toRadians(0))
 
 
+
+                                 */
 
 
 

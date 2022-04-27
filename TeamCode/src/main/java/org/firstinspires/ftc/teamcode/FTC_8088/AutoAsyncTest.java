@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -39,12 +40,21 @@ public class AutoAsyncTest extends LinearOpMode {
     DcMotor carouselWheelRight;
 
     CRServo intake;
+    CRServo guideWheelLeft;
+    CRServo guideWheelRight;
+
     CRServo capper;
+    CRServo capper2;
 
     RevTouchSensor leftTurretLimit;
     RevTouchSensor rightTurretLimit;
-    RevTouchSensor maxArmHeightLimit;
+    RevTouchSensor lowArmHeightLimit;
     RevColorSensorV3 colorSensor;
+
+    DigitalChannel LED_LRed;
+    DigitalChannel LED_LGreen;
+    DigitalChannel LED_RRed;
+    DigitalChannel LED_RGreen;
 
 
     // Motor Speed
@@ -54,11 +64,14 @@ public class AutoAsyncTest extends LinearOpMode {
     double backRightMotorSpeed;
 
     double intakeSpeed = 1;
-    double turretSpeed = 0.35;
+    double turretSpeed = 0.25;
     double armMotorSpeed = 0.4;
     double carouselWheelSpeed = 0.6;
 
     double powerMultiplier = 1.0;
+
+    //boolean hasCargo = colorSensor.getDistance(DistanceUnit.CM) <= 4.5;
+    boolean intakeState = true;
 
 
     ElapsedTime runtime = new ElapsedTime();
@@ -76,13 +89,25 @@ public class AutoAsyncTest extends LinearOpMode {
         carouselWheelRight = hardwareMap.get(DcMotor.class, "CWR");
 
         capper           = hardwareMap.get(CRServo.class, "CAP");
-        intake           = hardwareMap.get(CRServo.class, "Intake");
+        capper2 = hardwareMap.get(CRServo.class, "CAP2");
 
-        colorSensor      = hardwareMap.get(RevColorSensorV3.class, "CS");
+        intake = hardwareMap.get(CRServo.class, "Intake");
+        guideWheelLeft = hardwareMap.get(CRServo.class, "GWL");
+        guideWheelRight = hardwareMap.get(CRServo.class, "GWR");
+        colorSensor = hardwareMap.get(RevColorSensorV3.class, "CS");
+
+        LED_LRed = hardwareMap.get(DigitalChannel.class, "LED_L-Red");
+        LED_LGreen = hardwareMap.get(DigitalChannel.class, "LED_L-Green");
+
+        LED_RRed = hardwareMap.get(DigitalChannel.class, "LED_R-Red");
+        LED_RGreen = hardwareMap.get(DigitalChannel.class, "LED_R-Green");
+
         leftTurretLimit = hardwareMap.get(RevTouchSensor.class, "LTL");
         rightTurretLimit = hardwareMap.get(RevTouchSensor.class, "RTL");
-        maxArmHeightLimit = hardwareMap.get(RevTouchSensor.class, "MAHL");
+        lowArmHeightLimit = hardwareMap.get(RevTouchSensor.class, "LAHL");
 
+        armMotor.setDirection(DcMotor.Direction.REVERSE);
+        guideWheelRight.setDirection(CRServo.Direction.REVERSE);
 
 
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -107,58 +132,78 @@ public class AutoAsyncTest extends LinearOpMode {
 
         drive.setPoseEstimate(startPose); // Red Warehouse
 
+
         TrajectorySequence cycle1 = drive.trajectorySequenceBuilder(startPose)
 
                 // Pre-load
                 .setReversed(true)
-                .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+                .waitSeconds(0.5)
 
-                // 1st cylce
+                // 1st cycle
                 .setReversed(false)
+                .splineToConstantHeading(new Vector2d(16, -64), Math.toRadians(0))
                 .splineTo(new Vector2d(24,-64), Math.toRadians(0))
                 .splineTo(new Vector2d(44,-64), Math.toRadians(0))
 
-                .setReversed(true)
                 .lineTo(new Vector2d(12, -64))
-                .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
 
                 // 2nd cycle
-                .setReversed(false)
+                .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
                 .splineTo(new Vector2d(24,-64), Math.toRadians(0))
                 .splineTo(new Vector2d(44,-64), Math.toRadians(0))
 
-                .setReversed(true)
                 .lineTo(new Vector2d(12, -64))
-                .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
 
                 // 3rd cycle
-                .setReversed(false)
-                .splineTo(new Vector2d(24,-64), Math.toRadians(0))
-                .splineTo(new Vector2d(38,-64), Math.toRadians(0))
-                .splineTo(new Vector2d(46, -58), Math.toRadians(50))    // Two splines
-
-
-                .setReversed(true)
-                .splineTo(new Vector2d(38, -64), Math.toRadians(180))
-                .lineTo(new Vector2d(12, -64))
-                .splineTo(new Vector2d(0,-38), Math.toRadians(45))
-
-                // 4th cycle
-                .setReversed(false)
+                .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
                 .splineTo(new Vector2d(24,-64), Math.toRadians(0))
                 .splineTo(new Vector2d(44,-64), Math.toRadians(0))
 
-                .setReversed(true)
                 .lineTo(new Vector2d(12, -64))
-                .splineTo(new Vector2d(0,-38), Math.toRadians(45))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                // 4th cycle
+                .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,-64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, -58), Math.toRadians(50))
+
+                .setReversed(true)
+                .splineTo(new Vector2d(32, -64), Math.toRadians(180))
+                .lineTo(new Vector2d(12, -64))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                // 5th cycle
+                .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                .splineTo(new Vector2d(28,-64), Math.toRadians(0))
+                .splineTo(new Vector2d(46, -58), Math.toRadians(50))
+
+                .setReversed(true)
+                .splineTo(new Vector2d(32, -64), Math.toRadians(180))
+                .lineTo(new Vector2d(12, -64))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
+
+                // 6th cycle
+                .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
+                .splineTo(new Vector2d(24,-64), Math.toRadians(0))
+                .splineTo(new Vector2d(44,-64), Math.toRadians(0))
+
+                .lineTo(new Vector2d(12, -64))
+                .splineToConstantHeading(new Vector2d(-6, -48), Math.toRadians(110))
 
                 // Park
-                .setReversed(false)
+                .splineToConstantHeading(new Vector2d(12, -64), Math.toRadians(0))
                 .splineTo(new Vector2d(24,-64), Math.toRadians(0))
                 .splineTo(new Vector2d(44,-64), Math.toRadians(0))
 
 
                 .build();
+
+
 
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -216,18 +261,43 @@ public class AutoAsyncTest extends LinearOpMode {
                 break;
         }
 
+/*
         while (opModeIsActive() && !isStopRequested()) {
-            // 3 seconds into the opmode, we cancel the following
-            if (colorSensor.getDistance(DistanceUnit.CM) <= 3.5) {
 
+            if (drive.getPoseEstimate().getX()) {
+                intakeState = true;
+
+                if (hasCargo && intakeState) {
+                    intakeState = false;
+                }
             }
-            // TODO: copy over certain code from SampleMecanumDrive to SampleMecanumDriveCancelable
+            if (hasCargo) {
+                intake.setPower(0);
+            }
+            if (!drive.getPoseEstimate().epsilonEquals(new Pose2d(24, -64)) &&
+                    !drive.getPoseEstimate().epsilonEquals(new Pose2d(-6, -48))) {
+                intake.setPower(0);
+            }
+
+
             // Update drive
             drive.update();
         }
-
+ */
 
     }
 
+
+    public void moveArm(int targetPosition, double power) {
+        armMotor.setTargetPosition(targetPosition);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setPower(power);
+    }
+
+    public void moveTurret(int targetPosition, double power) {
+        turret.setTargetPosition(targetPosition);
+        turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        turret.setPower(power);
+    }
 
 }

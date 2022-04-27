@@ -4,7 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 /*
- * TODO: CURRENTLY 8088 CURRENTLY 8088 CURRENTLY 8088 CURRENTLY 8088 CURRENTLY 8088 CURRENTLY 8088
+ *
  *
  * Constants shared between multiple drive types.
  *
@@ -33,8 +33,8 @@ public class DriveConstants {
      * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
      * from DriveVelocityPIDTuner.
      */
-    public static final boolean RUN_USING_ENCODER = false;
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(0, 0, 0, 0);
+    public static final boolean RUN_USING_ENCODER = true;
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(5, 0, 8, 18);
 
     /*
      * These are physical constants that can be determined from your robot (including the track
@@ -45,8 +45,8 @@ public class DriveConstants {
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
     public static double WHEEL_RADIUS = 1.88976378; // in
-    public static double GEAR_RATIO = 15.0 / 1.0; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 12; // in
+    public static double GEAR_RATIO = 0.99; // output (wheel) speed / input (motor) speed
+    public static double TRACK_WIDTH = 16.1; // in
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
